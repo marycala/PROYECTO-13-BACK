@@ -54,9 +54,13 @@ const register = async (req, res, next) => {
     const userToReturn = newUser.toObject()
     delete userToReturn.password
 
-    return res
-      .status(201)
-      .json({ message: 'User created successfully', user: userToReturn })
+    const token = generateSign(newUser._id)
+
+    return res.status(201).json({
+      message: 'User created successfully',
+      user: userToReturn,
+      token,
+    })
   } catch (error) {
     return res.status(500).json({ message: 'Error creating user', error })
   }
