@@ -14,10 +14,10 @@ connectDB();
 app.use(cors());
 app.use(express.json());
 
-app.use("/", ImageRouter)
-app.use('/events', eventsRouter);
-app.use('/users', usersRouter);
-app.use('/attendees', attendeesRouter);
+app.use("/api/v1", ImageRouter)
+app.use('/api/v1/events', eventsRouter);
+app.use('/api/v1/users', usersRouter);
+app.use('/api/v1/attendees', attendeesRouter);
 
 
 app.use((err, req, res, next) => {
