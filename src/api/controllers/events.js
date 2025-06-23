@@ -211,26 +211,28 @@ const updateEvent = async (req, res, next) => {
 };
 
 const deleteEvent = async (req, res, next) => {
-  const { user } = req
-  const { id } = req.params
+  const { user } = req;
+  const { id } = req.params;
+
   try {
-    const event = await Event.findById(id)
+    const event = await Event.findById(id);
 
-    if (!event) return res.status(404).json({ message: 'Event not found' })
+    if (!event) return res.status(404).json({ message: 'Event not found' });
 
-    if (event.creator.toString() !== user._id.toString() && !user.roles.includes('admin')) {
-      return res.status(403).json({ message: 'You are not authorized to delete this event' })
+    const isCreator = event.creator?.toString() === user._id?.toString();
+    const isAdmin = Array.isArray(user.roles) && user.roles.includes('admin');
+
+    if (!isCreator && !isAdmin) {
+      return res.status(403).json({ message: 'You are not authorized to delete this event' });
     }
 
-    await Event.findByIdAndDelete(id)
+    await Event.findByIdAndDelete(id);
 
-    return res.status(200).json({ message: 'Event deleted successfully' })
+    return res.status(200).json({ message: 'Event deleted successfully' });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ message: 'There was a problem, please try again' })
+    return res.status(500).json({ message: 'There was a problem, please try again' });
   }
-}
+};
 
 module.exports = {
   createEvent,
