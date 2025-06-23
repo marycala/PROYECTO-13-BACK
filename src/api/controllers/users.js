@@ -40,6 +40,7 @@ const getUserById = async (req, res, next) => {
 }
 
 const register = async (req, res, next) => {
+  console.log('Register endpoint hit', req.body);
   const { email, password, userName } = req.body
 
   try {
