@@ -205,9 +205,9 @@ const updateEvent = async (req, res, next) => {
       updatedEvent
     });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'There was a problem, please try again' });
-  }
+    console.error('Update Event Error:', error);
+    return res.status(500).json({ message: 'There was a problem, please try again', error: error.message });
+  }  
 };
 
 const deleteEvent = async (req, res, next) => {
