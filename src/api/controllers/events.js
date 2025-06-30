@@ -162,7 +162,7 @@ const updateEvent = async (req, res, next) => {
   const { id } = req.params;
 
   try {
-    const isAdmin = user.roles.includes('admin');
+    const isAdmin = user.rol === 'admin';
     const event = await Event.findById(id);
 
     if (!event) {
@@ -220,7 +220,7 @@ const deleteEvent = async (req, res, next) => {
     if (!event) return res.status(404).json({ message: 'Event not found' });
 
     const isCreator = event.creator?.toString() === user._id?.toString();
-    const isAdmin = Array.isArray(user.roles) && user.roles.includes('admin');
+    const isAdmin = user.rol === 'admin';
 
     if (!isCreator && !isAdmin) {
       return res.status(403).json({ message: 'You are not authorized to delete this event' });
