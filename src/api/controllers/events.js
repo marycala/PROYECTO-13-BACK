@@ -173,6 +173,9 @@ const updateEvent = async (req, res, next) => {
       return res.status(403).json({ message: 'You are not authorized to update this event' });
     }
 
+    console.log("REQ.BODY:", req.body);
+    console.log("REQ.FILES:", req.files);
+
     const updatableFields = ['title', 'category', 'date', 'location', 'description', 'price'];
     updatableFields.forEach(field => {
       if (req.body[field]) {
@@ -180,9 +183,9 @@ const updateEvent = async (req, res, next) => {
       }
     });
 
-    if (req.file) {
+    if (req.files && req.files.img) {
       deleteFile(event.img);
-      req.body.img = req.file.path;
+      event.img = req.files.img[0].path;
     }
 
     let updatedEvent = await Event.findByIdAndUpdate(
@@ -212,7 +215,6 @@ const updateEvent = async (req, res, next) => {
       updatedEvent
     });
   } catch (error) {
-    console.error('Update Event Error:', error);
     return res.status(500).json({ message: 'There was a problem, please try again', error: error.message });
   }  
 };
