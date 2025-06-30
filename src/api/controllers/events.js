@@ -174,50 +174,40 @@ const updateEvent = async (req, res, next) => {
     }
 
     console.log("REQ.BODY:", req.body);
-    console.log("REQ.FILES:", req.files);
+    console.log("REQ.FILE:", req.file);
 
     const updatableFields = ['title', 'category', 'date', 'location', 'description', 'price'];
     updatableFields.forEach(field => {
-      if (req.body[field]) {
+      if (req.body[field] !== undefined) {
         event[field] = req.body[field];
       }
     });
 
-    if (req.files && req.files.img) {
+    if (req.file) {
       deleteFile(event.img);
-      event.img = req.files.img[0].path;
+      event.img = req.file.path;
     }
 
-    let updatedEvent = await Event.findByIdAndUpdate(
-      id,
-      { $set: req.body },
-      { new: true }
-    ).populate({
-      path: 'creator',
-      select: 'userName'
-    });
+    await event.save();
 
-    if (!updatedEvent) {
-      return res.status(400).json({ message: 'Event update failed' });
-    }
+    await event.populate({ path: 'creator', select: 'userName' });
 
     if (isAdmin) {
-      updatedEvent = await updatedEvent.populate({
-        path: 'attendees',
-        select: 'userName'
-      });
+      await event.populate({ path: 'attendees', select: 'userName' });
     } else {
-      updatedEvent.attendees = updatedEvent.attendees.length;
+      event.attendees = event.attendees.length;
     }
 
     return res.status(200).json({
       message: 'Event updated successfully',
-      updatedEvent
+      updatedEvent: event
     });
   } catch (error) {
+    console.error('Update Event Error:', error);
     return res.status(500).json({ message: 'There was a problem, please try again', error: error.message });
-  }  
+  }
 };
+
 
 const deleteEvent = async (req, res, next) => {
   const { user } = req;
