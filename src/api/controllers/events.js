@@ -11,11 +11,8 @@ const getEvents = async (req, res, next) => {
       })
       .populate({
         path: 'attendees',
-        populate: {
-          path: 'userId',
-          select: 'userName'
-        }
-      })
+        select: 'userName',
+      });
 
     return res.status(200).json(events)
   } catch (error) {
@@ -33,11 +30,8 @@ const getEventById = async (req, res, next) => {
       })
       .populate({
         path: 'attendees',
-        populate: {
-          path: 'userId',
-          select: 'userName'
-        }
-      })
+        select: 'userName',
+      });
     if (!event) {
       return res.status(404).json({ message: 'Event not found' })
     }
@@ -63,11 +57,8 @@ const getEventByTitle = async (req, res, next) => {
       })
       .populate({
         path: 'attendees',
-        populate: {
-          path: 'userId',
-          select: 'userName'
-        }
-      })
+        select: 'userName',
+      });
 
     if (events.length === 0) {
       return res.status(404).json({ message: 'No events found' })
@@ -89,11 +80,8 @@ const getEventByDate = async (req, res, next) => {
       })
       .populate({
         path: 'attendees',
-        populate: {
-          path: 'userId',
-          select: 'userName'
-        }
-      })
+        select: 'userName',
+      });
     if (!date) {
       return res.status(400).json({ message: 'Event not found' })
     }
