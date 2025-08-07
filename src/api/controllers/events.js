@@ -4,7 +4,14 @@ const User = require('../models/users')
 
 const getEvents = async (req, res, next) => {
   try {
-    const events = await Event.find().sort({ createdAt: -1 })
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const events = await Event.find()
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
       .populate({
         path: 'creator',
         select: 'userName'
@@ -14,7 +21,14 @@ const getEvents = async (req, res, next) => {
         select: 'userName',
       });
 
-    return res.status(200).json(events)
+      const total = await Event.countDocuments();
+
+      return res.status(200).json({
+        events,
+        totalPages: Math.ceil(total / limit),
+        page,
+        totalEvents: total,
+      });
   } catch (error) {
     return res.status(500).json({ message: 'Server error', error })
   }
