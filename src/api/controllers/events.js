@@ -4,35 +4,65 @@ const User = require('../models/users')
 
 const getEvents = async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const {
+      page = 1,
+      limit = 10,
+      category,
+      title,
+      location,
+      minPrice,
+      maxPrice,
+      minDate,
+      maxDate,
+    } = req.query;
+
+    const filters = {};
+
+    if (category && category !== "All") {
+      filters.category = category;
+    }
+
+    if (title) {
+      filters.title = { $regex: title, $options: "i" };
+    }
+
+    if (location && location !== "All") {
+      filters.location = { $regex: location, $options: "i" };
+    }
+
+    if (minPrice || maxPrice) {
+      filters.price = {};
+      if (minPrice) filters.price.$gte = Number(minPrice);
+      if (maxPrice) filters.price.$lte = Number(maxPrice);
+    }
+
+    if (minDate || maxDate) {
+      filters.date = {};
+      if (minDate) filters.date.$gte = new Date(minDate);
+      if (maxDate) filters.date.$lte = new Date(maxDate);
+    }
+
     const skip = (page - 1) * limit;
 
-    const events = await Event.find()
+    const events = await Event.find(filters)
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit)
-      .populate({
-        path: 'creator',
-        select: 'userName'
-      })
-      .populate({
-        path: 'attendees',
-        select: 'userName',
-      });
+      .limit(Number(limit))
+      .populate({ path: "creator", select: "userName" })
+      .populate({ path: "attendees", select: "userName" });
 
-      const total = await Event.countDocuments();
+    const total = await Event.countDocuments(filters);
 
-      return res.status(200).json({
-        events,
-        totalPages: Math.ceil(total / limit),
-        page,
-        totalEvents: total,
-      });
+    return res.status(200).json({
+      events,
+      total,
+      page: Number(page),
+      totalPages: Math.ceil(total / limit),
+    });
   } catch (error) {
-    return res.status(500).json({ message: 'Server error', error })
+    return res.status(500).json({ message: "Server error", error });
   }
-}
+};
 
 const getEventById = async (req, res, next) => {
   try {
