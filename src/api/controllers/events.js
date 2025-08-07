@@ -2,65 +2,55 @@ const { deleteFile } = require('../../utils/deleteFile')
 const Event = require('../models/events')
 const User = require('../models/users')
 
-const getEvents = async (req, res, next) => {
+const getEvents = async (req, res) => {
   try {
     const {
       page = 1,
       limit = 10,
-      category,
       title,
       location,
       minPrice,
       maxPrice,
       minDate,
-      maxDate,
+      maxDate
     } = req.query;
 
-    const filters = {};
-
-    if (category && category !== "All") {
-      filters.category = category;
-    }
+    const skip = (page - 1) * limit;
+    const query = {};
 
     if (title) {
-      filters.title = { $regex: title, $options: "i" };
+      query.title = { $regex: title, $options: 'i' };
     }
 
-    if (location && location !== "All") {
-      filters.location = { $regex: location, $options: "i" };
+    if (location) {
+      query.location = location;
     }
 
     if (minPrice || maxPrice) {
-      filters.price = {};
-      if (minPrice) filters.price.$gte = Number(minPrice);
-      if (maxPrice) filters.price.$lte = Number(maxPrice);
+      query.price = {};
+      if (minPrice) query.price.$gte = Number(minPrice);
+      if (maxPrice) query.price.$lte = Number(maxPrice);
     }
 
     if (minDate || maxDate) {
-      filters.date = {};
-      if (minDate) filters.date.$gte = new Date(minDate);
-      if (maxDate) filters.date.$lte = new Date(maxDate);
+      query.date = {};
+      if (minDate) query.date.$gte = new Date(minDate);
+      if (maxDate) query.date.$lte = new Date(maxDate);
     }
 
-    const skip = (page - 1) * limit;
+    const total = await Event.countDocuments(query);
+    const totalPages = Math.ceil(total / limit);
 
-    const events = await Event.find(filters)
+    const events = await Event.find(query)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(Number(limit))
-      .populate({ path: "creator", select: "userName" })
-      .populate({ path: "attendees", select: "userName" });
+      .populate({ path: 'creator', select: 'userName' })
+      .populate({ path: 'attendees', select: 'userName' });
 
-    const total = await Event.countDocuments(filters);
-
-    return res.status(200).json({
-      events,
-      total,
-      page: Number(page),
-      totalPages: Math.ceil(total / limit),
-    });
+    res.status(200).json({ events, total, page, totalPages });
   } catch (error) {
-    return res.status(500).json({ message: "Server error", error });
+    res.status(500).json({ message: 'Error fetching events', error });
   }
 };
 
