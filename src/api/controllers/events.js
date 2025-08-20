@@ -9,6 +9,7 @@ const getEvents = async (req, res) => {
       limit = 10,
       title,
       location,
+      category,
       minPrice,
       maxPrice,
       minDate,
@@ -27,6 +28,10 @@ const getEvents = async (req, res) => {
 
     if (location) {
       query.location = location;
+    }
+
+    if (category) {
+      query.category = category;
     }
 
     if (minPrice || maxPrice) {
