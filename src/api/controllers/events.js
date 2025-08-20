@@ -259,6 +259,15 @@ const deleteEvent = async (req, res, next) => {
   }
 };
 
+const getLocations = async (req, res) => {
+  try {
+    const locations = await Event.distinct("location");
+    res.status(200).json({ locations });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching locations", error: error.message });
+  }
+};
+
 module.exports = {
   createEvent,
   getEvents,
@@ -266,5 +275,6 @@ module.exports = {
   getEventByTitle,
   getEventByDate,
   updateEvent,
-  deleteEvent
+  deleteEvent,
+  getLocations
 }

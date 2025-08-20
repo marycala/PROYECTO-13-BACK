@@ -8,9 +8,12 @@ const {
   getEventByDate,
   updateEvent,
   deleteEvent,
+  getLocations,
 } = require('../controllers/events');
 
 const eventsRouter = require('express').Router();
+
+eventsRouter.get('/locations', getLocations);
 
 eventsRouter.get('/', getEvents);
 eventsRouter.get('/:id', getEventById);
