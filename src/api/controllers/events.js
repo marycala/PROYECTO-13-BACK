@@ -4,7 +4,7 @@ const User = require('../models/users')
 
 const getEvents = async (req, res) => {
   try {
-    const {
+    let {
       page = 1,
       limit = 10,
       title,
@@ -15,11 +15,14 @@ const getEvents = async (req, res) => {
       maxDate
     } = req.query;
 
+    page = parseInt(page);
+    limit = parseInt(limit);
+
     const skip = (page - 1) * limit;
     const query = {};
 
     if (title) {
-      query.title = { $regex: title, $options: 'i' };
+      query.title = { $regex: title, $options: "i" };
     }
 
     if (location) {
@@ -42,15 +45,15 @@ const getEvents = async (req, res) => {
     const totalPages = Math.ceil(total / limit);
 
     const events = await Event.find(query)
-      .sort({ createdAt: -1 })
+      .sort({ _id: -1 })
       .skip(skip)
-      .limit(Number(limit))
-      .populate({ path: 'creator', select: 'userName' })
-      .populate({ path: 'attendees', select: 'userName' });
+      .limit(limit)
+      .populate({ path: "creator", select: "userName" })
+      .populate({ path: "attendees", select: "userName" });
 
     res.status(200).json({ events, total, page, totalPages });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching events', error });
+    res.status(500).json({ message: "Error fetching events", error: error.message });
   }
 };
 
