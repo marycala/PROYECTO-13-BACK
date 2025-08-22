@@ -136,36 +136,54 @@ const createEvent = async (req, res, next) => {
   try {
     const userId = req.user._id;
 
-    const eventDuplicated = await Event.findOne({ title: { $regex: `^${req.body.title}$`, $options: 'i' } });
+    // Check if event with same title already exists
+    const eventDuplicated = await Event.findOne({
+      title: { $regex: `^${req.body.title}$`, $options: 'i' }
+    });
     if (eventDuplicated) {
       return res.status(400).json({ message: "This event already exists" });
     }
 
     let { title, category, date, location, description, price } = req.body;
 
-    category = category?.trim();
+    // Normalize category (first letter uppercase, rest lowercase)
+    if (category) {
+      category = category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
+    }
+
     const allowedCategories = [
       "Music", "Sports", "Tech", "Art", "Food", "Business",
       "Education", "Health", "Gaming", "Travel", "Fashion", "Other"
     ];
 
     if (!category || !allowedCategories.includes(category)) {
-      return res.status(400).json({ 
-        message: `Invalid category. Must be one of: ${allowedCategories.join(", ")}` 
+      return res.status(400).json({
+        message: `Invalid category. Must be one of: ${allowedCategories.join(", ")}`
       });
     }
 
+    // Validate date
+    if (!date || isNaN(Date.parse(date))) {
+      return res.status(400).json({ message: "Invalid date format" });
+    }
+
+    // Validate price
+    if (price !== undefined && (isNaN(price) || price < 0)) {
+      return res.status(400).json({ message: "Price must be a positive number" });
+    }
+
+    // Check if user exists
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
     const eventData = {
-      title: title.trim(),
+      title: title?.trim(),
       category,
-      date,
-      location: location.trim(),
-      description: description.trim(),
+      date: new Date(date),
+      location: location?.trim() || "",
+      description: description?.trim() || "",
       price,
       creator: userId,
       img: req.file?.path || req.body.img || null,
@@ -197,46 +215,73 @@ const updateEvent = async (req, res, next) => {
   const { id } = req.params;
 
   try {
-    const isAdmin = user.rol === 'admin';
+    const isAdmin = user.rol === "admin";
     const event = await Event.findById(id);
 
     if (!event) {
-      return res.status(404).json({ message: 'Event not found' });
+      return res.status(404).json({ message: "Event not found" });
     }
 
     if (event.creator.toString() !== user._id.toString() && !isAdmin) {
-      return res.status(403).json({ message: 'You are not authorized to update this event' });
+      return res
+        .status(403)
+        .json({ message: "You are not authorized to update this event" });
     }
 
-    const updatableFields = ['title', 'category', 'date', 'location', 'description', 'price'];
-    updatableFields.forEach(field => {
+    const allowedCategories = [
+      "Music", "Sports", "Tech", "Art", "Food", "Business",
+      "Education", "Health", "Gaming", "Travel", "Fashion", "Other"
+    ];
+
+    const updatableFields = ["title", "category", "date", "location", "description", "price"];
+
+    updatableFields.forEach((field) => {
       if (req.body[field] !== undefined) {
-        event[field] = req.body[field];
+        let value = req.body[field];
+
+        if (typeof value === "string") {
+          value = value.trim();
+        }
+
+        if (field === "category") {
+          if (!allowedCategories.includes(value)) {
+            return res.status(400).json({
+              message: `Invalid category. Must be one of: ${allowedCategories.join(", ")}`,
+            });
+          }
+        }
+
+        event[field] = value;
       }
     });
 
     if (req.files && req.files.img && req.files.img.length > 0) {
-      deleteFile(event.img);
+      if (event.img) {
+        deleteFile(event.img);
+      }
       event.img = req.files.img[0].path;
-    }    
+    }
 
     await event.save();
 
-    await event.populate({ path: 'creator', select: 'userName' });
+    await event.populate({ path: "creator", select: "userName" });
 
     if (isAdmin) {
-      await event.populate({ path: 'attendees', select: 'userName' });
+      await event.populate({ path: "attendees", select: "userName" });
     } else {
       event.attendees = event.attendees.length;
     }
 
     return res.status(200).json({
-      message: 'Event updated successfully',
-      updatedEvent: event
+      message: "Event updated successfully",
+      updatedEvent: event,
     });
   } catch (error) {
-    console.error('Update Event Error:', error);
-    return res.status(500).json({ message: 'There was a problem, please try again', error: error.message });
+    console.error("Update Event Error:", error);
+    return res.status(500).json({
+      message: "There was a problem, please try again",
+      error: error.message,
+    });
   }
 };
 
