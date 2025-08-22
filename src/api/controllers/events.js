@@ -136,19 +136,23 @@ const createEvent = async (req, res, next) => {
   try {
     const userId = req.user._id;
 
-    const eventDuplicated = await Event.findOne({ title: req.body.title });
+    const eventDuplicated = await Event.findOne({ title: { $regex: `^${req.body.title}$`, $options: 'i' } });
     if (eventDuplicated) {
       return res.status(400).json({ message: "This event already exists" });
     }
 
-    const { title, category, date, location, description, price } = req.body;
+    let { title, category, date, location, description, price } = req.body;
 
+    category = category?.trim();
     const allowedCategories = [
-      "Music", "Sports", "Tech", "Art", "Food", "Business", "Education", "Health", "Gaming", "Travel", "Fashion", "Other"
+      "Music", "Sports", "Tech", "Art", "Food", "Business",
+      "Education", "Health", "Gaming", "Travel", "Fashion", "Other"
     ];
 
     if (!category || !allowedCategories.includes(category)) {
-      return res.status(400).json({ message: "Invalid category" });
+      return res.status(400).json({ 
+        message: `Invalid category. Must be one of: ${allowedCategories.join(", ")}` 
+      });
     }
 
     const user = await User.findById(userId);
@@ -157,11 +161,11 @@ const createEvent = async (req, res, next) => {
     }
 
     const eventData = {
-      title,
+      title: title.trim(),
       category,
       date,
-      location,
-      description,
+      location: location.trim(),
+      description: description.trim(),
       price,
       creator: userId,
       img: req.file?.path || req.body.img || null,
@@ -180,6 +184,7 @@ const createEvent = async (req, res, next) => {
       newEvent,
     });
   } catch (error) {
+    console.error("Error creating event:", error);
     return res.status(500).json({
       message: "There was a problem, please try again",
       error: error.message,
