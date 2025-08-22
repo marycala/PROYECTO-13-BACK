@@ -90,7 +90,7 @@ const deleteAttendee = async (req, res) => {
 
     await Attendee.findByIdAndDelete(attendee._id);
 
-    await Event.findByIdAndUpdate(
+    const updatedEvent = await Event.findByIdAndUpdate(
       eventId,
       { $pull: { attendees: userId } },
       { new: true }
@@ -107,13 +107,15 @@ const deleteAttendee = async (req, res) => {
       { new: true }
     );
 
-    res.status(200).json({ message: 'Attendance cancelled' });
+    res.status(200).json({
+      message: 'Attendance cancelled',
+      attendees: updatedEvent.attendees
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Internal error' });
   }
 };
-
 
 module.exports = {
   getAttendees,
